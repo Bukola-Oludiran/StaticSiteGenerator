@@ -1,0 +1,23 @@
+{
+  "name": "staticsitegenerator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/commonmark": "^0.27.10",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "commonmark": "^0.31.2",
+    "handlebars": "^4.7.10",
+    "yaml": "^2.9.1"
+  }
+}

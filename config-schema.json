@@ -1,0 +1,40 @@
+{
+    "input_directory": {
+        "type": "string",
+        "description": "The directory where the source files for the static site are located."
+    },
+    "output_directory": {
+        "type": "string",
+        "description": "The directory where the generated static site files will be saved."
+    },
+    "passthorugh_files": {
+        "type": "array",
+        "items": {
+            "type": "string"
+        },
+        "description": "A list of file patterns to be copied directly from the input directory to the output directory without processing."
+    },  
+    "default_template": {
+        "type": "string",
+        "description": "The default template file to be used for generating pages if no specific template is provided."
+    },
+    "site_title": {
+        "type": "string",
+        "description": "The title of the static site, which can be used in templates and metadata."      
+    },
+    "site_description": {
+        "type": "string",
+        "description": "A brief description of the static site, which can be used in templates and metadata."
+    },
+    "site_author": {
+        "type": "string",
+        "description": "The author of the static site, which can be used in templates and metadata."
+    },
+    "Plugins": {
+        "type": "array",
+        "items": {
+            "location": "string"
+        },
+        "description": "A list of plugins to be used during the static site generation process."
+    }
+}
