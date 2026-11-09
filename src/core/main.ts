@@ -8,13 +8,13 @@ interface TemplateRenderHelper {
 }
 
 interface MarkdownParsingContext {
-    parser: typeof MarkdownParser;
+    parser: MarkdownParser;
     reader: MarkdownReader;
     markdownURL: string;
 }
 
 interface LayoutRenderingContext {
-    layoutEngine: typeof LayoutEngine;
+    layoutEngine: LayoutEngine;
     template: string;
 }
 
@@ -58,21 +58,23 @@ class StaticSiteGenerator {
         this.templateRenderingStep = step;
     }
 
-    async generateSite(layoutEngine: typeof LayoutEngine, markdownEngine: MarkdownReader): Promise<string>
+    async generateSite(layoutEngine: LayoutEngine, markdownEngine: MarkdownParser, markdownURL: string): Promise<string>
     {
         const parsedMarkdown = await this.markdownParsingStep({
-            parser: MarkdownParser,
-            reader: markdownEngine,
-            markdownURL: "path/to/markdown/file.md"
+            parser: markdownEngine,
+            reader: markdownEngine.markdownReader,
+            markdownURL
         });
         const renderedLayout = this.layoutRenderingStep({
             layoutEngine,
             template: parsedMarkdown.layout
         });
+        //TODO: Remember to use context from config as well
         const finalOutput = this.templateRenderingStep({
             helper: renderTemplate,
             template: renderedLayout,
             data: parsedMarkdown.parsedContent
+            //TODO: Format the context object properly
         });
         return finalOutput;
     }
