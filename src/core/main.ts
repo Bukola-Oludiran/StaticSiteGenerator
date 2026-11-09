@@ -58,7 +58,7 @@ class StaticSiteGenerator {
         this.templateRenderingStep = step;
     }
 
-    async generateSite(layoutEngine: LayoutEngine, markdownEngine: MarkdownParser, markdownURL: string): Promise<string>
+    async generateSite(layoutEngine: LayoutEngine, markdownEngine: MarkdownParser, markdownURL: string, configData:any): Promise<string>
     {
         const parsedMarkdown = await this.markdownParsingStep({
             parser: markdownEngine,
@@ -73,8 +73,14 @@ class StaticSiteGenerator {
         const finalOutput = this.templateRenderingStep({
             helper: renderTemplate,
             template: renderedLayout,
-            data: parsedMarkdown.parsedContent
-            //TODO: Format the context object properly
+            data: {
+                ...configData,
+                page: {
+                ...parsedMarkdown.frontMatter
+                },
+                content: new Handlebars.SafeString(parsedMarkdown.parsedContent)
+            }
+            
         });
         return finalOutput;
     }
