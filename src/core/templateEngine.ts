@@ -58,31 +58,26 @@ class LayoutEngine{
        
     }
 
-    renderLayout(templateName: string): string {
-        const seenTemplates = new Set<string>();
+    renderPage(layoutName: string, data: any): string {
+    const seen = new Set<string>();
+    let html: string = data.content;          // the rendered Markdown body
+    let name: string | undefined = layoutName;
 
-        const recursiveRender = (templateName: string): string =>{
-            if (seenTemplates.has(templateName)){
-                throw new Error(`Circular dependency detected in templates: ${templateName}`);
-            }
-            seenTemplates.add(templateName);
-            const {template, layout} = this.parseTemplate(templateName);
+    while (name && name !== "none") {
+        if (seen.has(name)) {
+            throw new Error(`Circular dependency detected in templates: ${name}`);
+        }
+        seen.add(name);
 
-            if (layout && layout !== "none") {
-                const parentTemplateContent = this.getTemplate(layout);
-                if (!parentTemplateContent) {
-                    throw new Error(`Parent template ${layout} not found for template ${templateName}.`);
-                }
-                const renderedParentTemplate = recursiveRender(layout);
-                return renderTemplate(renderedParentTemplate, { content: template });
-            }
-
-            return template;
-
+        const { template, layout } = this.parseTemplate(name);
+        html = renderTemplate(template, {
+            ...data,                                     // site, page: available at every layer
+            content: new handlebars.SafeString(html)     // the layer inside this one
+        });
+        name = layout;
     }
-    return recursiveRender(templateName);
-    }
-
+    return html;
+}
 }
 
 export { LayoutEngine, renderTemplate };

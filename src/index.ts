@@ -2,9 +2,9 @@ import {StaticSiteGenerator} from './core/main.ts';
 import {MarkdownParser, CommonMarkdownReader,} from './core/markdownParser.ts';
 import {LayoutEngine} from './core/templateEngine.ts';
 import type {ParsedFile, MarkdownReader} from "./core/markdownParser.ts";
-import { readFileSync, readdirSync, writeFileSync } from "fs";
-import type {markdownParsingStep, layoutRenderingStep, templateRenderingStep} from "./core/main.ts"
-import { title } from 'process';
+import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "fs";
+import type {markdownParsingStep, layoutRenderingStep} from "./core/main.ts"
+import path from 'path';
 
 
 interface ConfigSchema{
@@ -22,7 +22,6 @@ interface ConfigSchema{
 interface PluginObjects{
     MarkDownParsingStep: markdownParsingStep,
     LayoutRenderingStep: layoutRenderingStep,
-    TemplateRenderingStep: templateRenderingStep
 }
 
 
@@ -30,13 +29,10 @@ async function defaultMarkdownParsingStep(ctxObj: {parser: MarkdownParser, reade
     return ctxObj.parser.parseFile(ctxObj.markdownURL);
 }
 
-function defaultLayoutRenderingStep(ctxObj: {layoutEngine: LayoutEngine, template: string}): string {
-    return ctxObj.layoutEngine.renderLayout(ctxObj.template);
+function defaultLayoutRenderingStep(ctxObj: {layoutEngine: LayoutEngine, template: string, data: any}): string {
+    return ctxObj.layoutEngine.renderPage(ctxObj.template, ctxObj.data);
 }
 
-function defaultTemplateRenderingStep(ctxObj: {helper: (template: string, data: any) => string, template: string, data: any}): string {
-    return ctxObj.helper(ctxObj.template, ctxObj.data);
-} 
 
 function loadConfig(): ConfigSchema {
     const configPath = './config.json';
@@ -52,7 +48,7 @@ function loadTemplates (templatePath:string, layoutEngine: LayoutEngine): void{
     const files = readdirSync(templatePath)
     files.forEach((file)=>{
         let name = file.split(".")[0]
-        let content = readFileSync(file, 'utf-8')
+        let content = readFileSync(path.join(templatePath, file), 'utf-8')
         if(!name || !content){
             throw new Error(`Problem reading template folder`)
         }
@@ -64,7 +60,7 @@ function loadPartials (partialPath: string, layoutEngine: LayoutEngine): void{
      const files = readdirSync(partialPath)
     files.forEach((file)=>{
         let name = file.split(".")[0]
-        let content = readFileSync(file, 'utf-8')
+        let content = readFileSync(path.join(partialPath, file), 'utf-8')
         if(!name || !content){
             throw new Error(`Problem reading template folder`)
         }
@@ -72,17 +68,19 @@ function loadPartials (partialPath: string, layoutEngine: LayoutEngine): void{
     })
 }
 
-function processFilesInFolderRecursively(contentPath: string, genrator: StaticSiteGenerator, layoutEngine: LayoutEngine, markdownEngine: MarkdownParser, configData: any): void{
+function processFilesInFolderRecursively(contentPath: string, genrator: StaticSiteGenerator, layoutEngine: LayoutEngine, markdownEngine: MarkdownParser, configData: any, outputPath: string): void{
     
     const content = readdirSync(contentPath,  {withFileTypes: true })
 
     content.forEach(async (file)=>{
         if (file.isDirectory()){
-            processFilesInFolderRecursively(`contentPath/${file.name}`, genrator, layoutEngine, markdownEngine, configData)
+            processFilesInFolderRecursively(`${contentPath}/${file.name}`, genrator, layoutEngine, markdownEngine, configData, outputPath)
         }
         else{
-           let webpage = await genrator.generateSite(layoutEngine, markdownEngine, `contentPath/${file.name}`, configData)
-           writeFileSync(`contentPath/${file.name}`, webpage)
+           let webpage = await genrator.generateSite(layoutEngine, markdownEngine, `${contentPath}/${file.name}`, configData)
+           const outFile = `${outputPath}/${contentPath}/`
+           mkdirSync(outFile, { recursive: true })
+           writeFileSync(path.join(outFile, file.name.replace(".md", ".html")), webpage)
         }
     })
 
@@ -99,9 +97,7 @@ async function loadPlugin(path: string, generator: StaticSiteGenerator): Promise
 
     staticSiteGenerator.registerLayoutRenderingStep(pluginObject.LayoutRenderingStep)
     staticSiteGenerator.registerMarkdownParsingStep(pluginObject.MarkDownParsingStep)
-    staticSiteGenerator.registerTemplateRenderingStep(pluginObject.TemplateRenderingStep)
 }
-
 
 
 const layoutEngine = new LayoutEngine();
@@ -110,7 +106,6 @@ const markdownEngine = new MarkdownParser(CommonMarkdownReader);
 const staticSiteGenerator = new StaticSiteGenerator(
     defaultMarkdownParsingStep,
     defaultLayoutRenderingStep,
-    defaultTemplateRenderingStep
 );
 
 const config = loadConfig();
@@ -133,7 +128,7 @@ let configData = {
 loadTemplates(`${config.input_directory}/template`, layoutEngine)
 loadPartials(`${config.input_directory}/partials`, layoutEngine)
 
-processFilesInFolderRecursively(`${config.input_directory}/partials`, staticSiteGenerator, layoutEngine, markdownEngine, configData)
+processFilesInFolderRecursively(`${config.input_directory}/content`, staticSiteGenerator, layoutEngine, markdownEngine, configData, config.output_directory)
 
 
 

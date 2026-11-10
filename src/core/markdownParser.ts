@@ -1,4 +1,4 @@
-import commonmark from 'commonmark'
+import * as commonmark from 'commonmark'
 import YAML from 'yaml'
 import { readFile } from 'fs/promises'
 
