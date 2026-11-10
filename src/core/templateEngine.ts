@@ -60,7 +60,7 @@ class LayoutEngine{
 
     renderPage(layoutName: string, data: any): string {
     const seen = new Set<string>();
-    let html: string = data.content;          // the rendered Markdown body
+    let html: string  = data.content.toString();          
     let name: string | undefined = layoutName;
 
     while (name && name !== "none") {
@@ -71,8 +71,8 @@ class LayoutEngine{
 
         const { template, layout } = this.parseTemplate(name);
         html = renderTemplate(template, {
-            ...data,                                     // site, page: available at every layer
-            content: new handlebars.SafeString(html)     // the layer inside this one
+            ...data,                                     
+            content: new handlebars.SafeString(html)  
         });
         name = layout;
     }

@@ -47,43 +47,53 @@ function loadConfig(): ConfigSchema {
 function loadTemplates (templatePath:string, layoutEngine: LayoutEngine): void{
     const files = readdirSync(templatePath)
     files.forEach((file)=>{
-        let name = file.split(".")[0]
-        let content = readFileSync(path.join(templatePath, file), 'utf-8')
-        if(!name || !content){
-            throw new Error(`Problem reading template folder`)
+        if(!(file === ".DS_Store")){  
+            let name = file.split(".")[0]
+            let content = readFileSync(path.join(templatePath, file), 'utf-8')
+            if(!name || !content){
+                throw new Error(`Problem reading template folder`)
+            }
+            layoutEngine.addTemplate(name, content)
         }
-        layoutEngine.addTemplate(name, content)
     })
 }
 
 function loadPartials (partialPath: string, layoutEngine: LayoutEngine): void{
      const files = readdirSync(partialPath)
     files.forEach((file)=>{
-        let name = file.split(".")[0]
-        let content = readFileSync(path.join(partialPath, file), 'utf-8')
-        if(!name || !content){
-            throw new Error(`Problem reading template folder`)
+        if(!(file === ".DS_Store")){     
+            let name = file.split(".")[0]
+            let content = readFileSync(path.join(partialPath, file), 'utf-8')
+            if(!name || !content){
+                throw new Error(`Problem reading template folder`)
+            }
+            layoutEngine.addPartial(name, content)
+
         }
-        layoutEngine.addPartial(name, content)
+        
     })
 }
 
-function processFilesInFolderRecursively(contentRoot: string, contentPath: string, genrator: StaticSiteGenerator, layoutEngine: LayoutEngine, markdownEngine: MarkdownParser, configData: any, outputPath: string): void{
+async function processFilesInFolderRecursively(contentRoot: string, contentPath: string, genrator: StaticSiteGenerator, layoutEngine: LayoutEngine, markdownEngine: MarkdownParser, configData: any, outputPath: string): Promise<void>{
     
     const content = readdirSync(contentPath,  {withFileTypes: true })
 
-    content.forEach(async (file)=>{
-        if (file.isDirectory()){
-            processFilesInFolderRecursively(contentRoot, `${contentPath}/${file.name}`, genrator, layoutEngine, markdownEngine, configData, outputPath)
-        }
-        else{
-           let webpage = await genrator.generateSite(layoutEngine, markdownEngine, `${contentPath}/${file.name}`, configData)
-           const outFile = `${outputPath}/${path.relative(contentRoot, contentPath)}/`
 
-           mkdirSync(outFile, { recursive: true })
-           writeFileSync(path.join(outFile, file.name.replace(".md", ".html")), webpage)
-        }
-    })
+
+    for (let file of content){
+        if(!(file.name === ".DS_Store")){  
+            if (file.isDirectory()){
+                processFilesInFolderRecursively(contentRoot, `${contentPath}/${file.name}`, genrator, layoutEngine, markdownEngine, configData, outputPath)
+            }
+            else{
+            let webpage = await genrator.generateSite(layoutEngine, markdownEngine, `${contentPath}/${file.name}`, configData)
+            const outFile = `${outputPath}/${path.relative(contentRoot, contentPath)}/`
+
+            mkdirSync(outFile, { recursive: true })
+            writeFileSync(path.join(outFile, file.name.replace(".md", ".html")), webpage)
+            }
+     }
+    }
 
 }
 
@@ -96,8 +106,14 @@ async function loadPlugin(path: string, generator: StaticSiteGenerator): Promise
         throw new Error("Error importing plugin")
     }
 
-    staticSiteGenerator.registerLayoutRenderingStep(pluginObject.LayoutRenderingStep)
-    staticSiteGenerator.registerMarkdownParsingStep(pluginObject.MarkDownParsingStep)
+    if(pluginObject.LayoutRenderingStep){
+         generator.registerLayoutRenderingStep(pluginObject.LayoutRenderingStep)
+    }
+
+   if(pluginObject.MarkDownParsingStep){
+    generator.registerMarkdownParsingStep(pluginObject.MarkDownParsingStep)
+}
+
 }
 
 
@@ -113,9 +129,9 @@ const config = loadConfig();
 
 const plugins = config.Plugins
 
-plugins.forEach((plugin)=>{
-    loadPlugin(plugin, staticSiteGenerator)
-})
+for (let plugin of plugins){
+    await loadPlugin(plugin, staticSiteGenerator)
+}
 
 let configData = {
     site: {
