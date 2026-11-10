@@ -5,6 +5,8 @@ import type {ParsedFile, MarkdownReader} from "./core/markdownParser.ts";
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "fs";
 import type {markdownParsingStep, layoutRenderingStep} from "./core/main.ts"
 import path from 'path';
+import { pathToFileURL } from 'url';
+   
 
 
 interface ConfigSchema{
@@ -80,30 +82,29 @@ async function processFilesInFolderRecursively(contentRoot: string, contentPath:
 
 
 
-    for (let file of content){
-        if(!(file.name === ".DS_Store")){  
+    for (let file of content){  
             if (file.isDirectory()){
-                processFilesInFolderRecursively(contentRoot, `${contentPath}/${file.name}`, genrator, layoutEngine, markdownEngine, configData, outputPath)
+                await processFilesInFolderRecursively(contentRoot, `${contentPath}/${file.name}`, genrator, layoutEngine, markdownEngine, configData, outputPath)
             }
-            else{
+            else if(file.name.endsWith('.md')){
             let webpage = await genrator.generateSite(layoutEngine, markdownEngine, `${contentPath}/${file.name}`, configData)
             const outFile = `${outputPath}/${path.relative(contentRoot, contentPath)}/`
 
             mkdirSync(outFile, { recursive: true })
             writeFileSync(path.join(outFile, file.name.replace(".md", ".html")), webpage)
-            }
+
      }
     }
 
 }
 
-async function loadPlugin(path: string, generator: StaticSiteGenerator): Promise<void>{
+async function loadPlugin(p: string, generator: StaticSiteGenerator): Promise<void>{
     let pluginObject: PluginObjects 
     try{
-        pluginObject  = await import(path)
+        pluginObject  = pluginObject = await import(pathToFileURL(path.resolve(p)).href)
     }
     catch(err){
-        throw new Error("Error importing plugin")
+        throw new Error("Error importing plugin", { cause: err })
     }
 
     if(pluginObject.LayoutRenderingStep){
@@ -127,11 +128,15 @@ const staticSiteGenerator = new StaticSiteGenerator(
 
 const config = loadConfig();
 
-const plugins = config.Plugins
+const plugins = config.Plugins ?? []
 
-for (let plugin of plugins){
-    await loadPlugin(plugin, staticSiteGenerator)
+if(plugins){
+
+        for (let plugin of plugins){
+        await loadPlugin(plugin, staticSiteGenerator)
+    }
 }
+
 
 let configData = {
     site: {
@@ -145,7 +150,7 @@ let configData = {
 loadTemplates(`${config.input_directory}/template`, layoutEngine)
 loadPartials(`${config.input_directory}/partials`, layoutEngine)
 
-processFilesInFolderRecursively(`${config.input_directory}/content`,`${config.input_directory}/content`, staticSiteGenerator, layoutEngine, markdownEngine, configData, config.output_directory)
+await processFilesInFolderRecursively(`${config.input_directory}/content`,`${config.input_directory}/content`, staticSiteGenerator, layoutEngine, markdownEngine, configData, config.output_directory)
 
 
 
