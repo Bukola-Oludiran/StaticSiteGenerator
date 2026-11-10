@@ -101,10 +101,10 @@ async function processFilesInFolderRecursively(contentRoot: string, contentPath:
 async function loadPlugin(p: string, generator: StaticSiteGenerator): Promise<void>{
     let pluginObject: PluginObjects 
     try{
-        pluginObject  = pluginObject = await import(pathToFileURL(path.resolve(p)).href)
+        pluginObject = await import(pathToFileURL(path.resolve(p)).href)
     }
     catch(err){
-        throw new Error("Error importing plugin", { cause: err })
+        throw new Error(`Error importing plugin ${p}`, { cause: err })
     }
 
     if(pluginObject.LayoutRenderingStep){
@@ -115,6 +115,13 @@ async function loadPlugin(p: string, generator: StaticSiteGenerator): Promise<vo
     generator.registerMarkdownParsingStep(pluginObject.MarkDownParsingStep)
 }
 
+}
+
+function handlePassThroughs(pathRoot:string, inputPath: string, outputPath: string){
+    const file = readFileSync(inputPath)
+    const outFile = `${outputPath}/${path.relative(pathRoot, inputPath)}/`
+    mkdirSync(outFile, { recursive: true })
+    writeFileSync(outFile, file)
 }
 
 
@@ -137,6 +144,13 @@ if(plugins){
     }
 }
 
+const passThroughs = config.passthorugh_files ?? []
+
+if(passThroughs){
+    for(let file of passThroughs){
+        handlePassThroughs(config.input_directory, file, config.output_directory)
+    }
+}
 
 let configData = {
     site: {
