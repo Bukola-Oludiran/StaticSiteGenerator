@@ -68,17 +68,18 @@ function loadPartials (partialPath: string, layoutEngine: LayoutEngine): void{
     })
 }
 
-function processFilesInFolderRecursively(contentPath: string, genrator: StaticSiteGenerator, layoutEngine: LayoutEngine, markdownEngine: MarkdownParser, configData: any, outputPath: string): void{
+function processFilesInFolderRecursively(contentRoot: string, contentPath: string, genrator: StaticSiteGenerator, layoutEngine: LayoutEngine, markdownEngine: MarkdownParser, configData: any, outputPath: string): void{
     
     const content = readdirSync(contentPath,  {withFileTypes: true })
 
     content.forEach(async (file)=>{
         if (file.isDirectory()){
-            processFilesInFolderRecursively(`${contentPath}/${file.name}`, genrator, layoutEngine, markdownEngine, configData, outputPath)
+            processFilesInFolderRecursively(contentRoot, `${contentPath}/${file.name}`, genrator, layoutEngine, markdownEngine, configData, outputPath)
         }
         else{
            let webpage = await genrator.generateSite(layoutEngine, markdownEngine, `${contentPath}/${file.name}`, configData)
-           const outFile = `${outputPath}/${contentPath}/`
+           const outFile = `${outputPath}/${path.relative(contentRoot, contentPath)}/`
+
            mkdirSync(outFile, { recursive: true })
            writeFileSync(path.join(outFile, file.name.replace(".md", ".html")), webpage)
         }
@@ -128,7 +129,7 @@ let configData = {
 loadTemplates(`${config.input_directory}/template`, layoutEngine)
 loadPartials(`${config.input_directory}/partials`, layoutEngine)
 
-processFilesInFolderRecursively(`${config.input_directory}/content`, staticSiteGenerator, layoutEngine, markdownEngine, configData, config.output_directory)
+processFilesInFolderRecursively(`${config.input_directory}/content`,`${config.input_directory}/content`, staticSiteGenerator, layoutEngine, markdownEngine, configData, config.output_directory)
 
 
 
