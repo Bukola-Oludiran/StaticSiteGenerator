@@ -1,8 +1,9 @@
 import * as commonmark from 'commonmark'
 import YAML from 'yaml'
 import { readFile } from 'fs/promises'
+import { readFileSync } from 'fs'
 
-//Todo: Repo Cleanup
+
 export interface ParsedFile {
     frontMatter: {
         Title: string
@@ -56,9 +57,9 @@ class MarkdownParser {
         return FrontMatter
     }
 
-    async parseFile(url: string): Promise<ParsedFile> {
+    parseFile(url: string): ParsedFile {
         try{
-        const file = await readFile(url, 'utf-8')
+        const file = readFileSync(url, 'utf-8')
         const frontMatterRegex = /^---\n([\s\S]*?)\n---/
         const frontMatterMatch = file.match(frontMatterRegex)
         let frontMatter: any = {}
