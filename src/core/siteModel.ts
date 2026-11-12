@@ -6,19 +6,21 @@ import { MarkdownParser } from "./markdownParser.ts";
 interface treeNode{
  
     name: string 
-    children: treeNode[]
     type: string 
-    content: string 
-    tags: string[]
-    date: string
-    layout: string
-    url: string 
+    // content: string 
+    // tags: string[]
+    // date: string
+    // layout: string
+    // url: string
+    // next: string 
+    // prev: string 
+
+    //Todo: Handle composite by making the explicit "Dir" and "File" classes.
 
 }
 
-class SiteNode implements treeNode{
+class FileNode implements treeNode{
     name: string 
-    children: treeNode[]
     type: string 
     content: string 
     tags: string[]
@@ -28,7 +30,6 @@ class SiteNode implements treeNode{
 
     constructor( 
         name: string, 
-        children: treeNode[],
         type: string, 
         content: string ,
         tags: string[],
@@ -38,7 +39,6 @@ class SiteNode implements treeNode{
         ){
 
             this.name = name
-            this.children = children
             this.type = type
             this.content = content
             this.tags = tags
@@ -49,30 +49,44 @@ class SiteNode implements treeNode{
 
 }
 
+class DirNode implements treeNode {
+
+    name: string 
+    children: treeNode[]
+    type: string 
+
+    constructor(name: string, children: treeNode[], type: string){
+        this.name = name
+        this.children = children
+        this.type = type
+    }
+
+}
+
 
 class SiteModel{
 
-    root: treeNode
+    root: DirNode
     markdownParser: MarkdownParser
     tags: string []
     posts: string []
 
 
     constructor(siteRoot: string, markdownParser: MarkdownParser){
-        this.root = new SiteNode("root", [], "dir", "", [], "", "", "/")
+        this.root = new DirNode("root", [], "dir",)
         this.markdownParser = markdownParser
         this.tags = []
         this.posts = []
 
     }
 
-    buildTree(path:string, root:SiteNode = this.root, url: string [] = []): SiteNode {
+    buildTree(path:string, root:DirNode = this.root, url: string [] = []): DirNode {
          const content = readdirSync(path, {withFileTypes: true })
 
 
          for (let file of content){
             if (file.isDirectory()){
-                let folder = new SiteNode(file.name, [], "dir", "", [], "", "", "" )
+                let folder = new DirNode(file.name, [], "dir", )
                 url.push(file.name)
                 folder = this.buildTree(path + `/${file.name}`, folder, url)
                 root.children.push(folder)
@@ -81,9 +95,8 @@ class SiteModel{
 
                 const filePath = url.join("/") + file.name
                 const parsedFile = this.markdownParser.parseFile(filePath)
-                const fileObj = new SiteNode(
+                const fileObj = new FileNode(
                     file.name, 
-                    [], 
                     "file",
                     parsedFile.parsedContent, 
                     parsedFile.frontMatter.Tags, 
