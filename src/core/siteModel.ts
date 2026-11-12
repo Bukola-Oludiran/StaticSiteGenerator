@@ -15,8 +15,6 @@ interface treeNode{
     // next: string 
     // prev: string 
 
-    //Todo: Handle composite by making the explicit "Dir" and "File" classes.
-
 }
 
 class FileNode implements treeNode{
@@ -27,6 +25,8 @@ class FileNode implements treeNode{
     date: string
     layout: string
     url: string 
+    next: string
+    prev: string
 
     constructor( 
         name: string, 
@@ -45,6 +45,8 @@ class FileNode implements treeNode{
             this.date = date
             this.layout = layout
             this.url = url
+            this.next = ""
+            this.prev = ""
     }
 
 }
