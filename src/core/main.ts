@@ -3,6 +3,9 @@ import {MarkdownParser, CommonMarkdownReader} from "./markdownParser.ts";
 import type {ParsedFile, MarkdownReader} from "./markdownParser.ts";
 import Handlebars from "handlebars";
 
+
+//Todo. Wrap Handlebars in an interface.
+
 interface TemplateRenderHelper {
     (template: string, data: any): string;
 }
