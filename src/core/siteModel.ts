@@ -54,10 +54,15 @@ class SiteModel{
 
     root: treeNode
     markdownParser: MarkdownParser
+    tags: string []
+    posts: string []
+
 
     constructor(siteRoot: string, markdownParser: MarkdownParser){
         this.root = new SiteNode("root", [], "dir", "", [], "", "", "/")
         this.markdownParser = markdownParser
+        this.tags = []
+        this.posts = []
 
     }
 
@@ -76,7 +81,15 @@ class SiteModel{
 
                 const filePath = url.join("/") + file.name
                 const parsedFile = this.markdownParser.parseFile(filePath)
-                const fileObj = new SiteNode(file.name, [], "file", parsedFile.parsedContent, parsedFile.frontMatter.Tags, parsedFile.frontMatter.Date, parsedFile.layout, filePath.replace(".md", ".html"))
+                const fileObj = new SiteNode(
+                    file.name, 
+                    [], 
+                    "file",
+                    parsedFile.parsedContent, 
+                    parsedFile.frontMatter.Tags, 
+                    parsedFile.frontMatter.Date, 
+                    parsedFile.layout, 
+                    filePath.replace(".md", ".html"))
                root.children.push(fileObj)
             }
 
@@ -85,4 +98,16 @@ class SiteModel{
          return root
 
     }
+
+    generateCollections(): any {
+
+    }
+
+
+
+
+
+
+
+
 }
