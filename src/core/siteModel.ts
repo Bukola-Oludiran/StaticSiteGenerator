@@ -1,4 +1,3 @@
-import { Interface } from "node:readline";
 import { readdirSync } from "node:fs";
 import { MarkdownParser } from "./markdownParser.ts";
 
@@ -99,7 +98,7 @@ class SiteModel{
                 url.pop()
             }else if(file.name.endsWith('.md')){
 
-                const filePath = path + url.join("/") + file.name
+                const filePath = `${path}/` + url.join("/") + file.name
                 const parsedFile = this.markdownParser.parseFile(filePath)
                 const fileObj = new FileNode(
                     file.name, 
@@ -147,9 +146,6 @@ class SiteModel{
             
 
                 }
-
-        //TODO: traverse tree with DFS. Fill Posts, tags and handle Next and prev.
-
             }
 
             for (let item of dirs){
@@ -165,5 +161,46 @@ class SiteModel{
     }
 
 
-    //TODO: use the flattened list to assign prev and next values for each file object
+    prefillLinks(root:DirNode = this.root){
+        const maxLength = this.posts.length
+        const postList = this.posts
+
+        let idx = 0
+
+        
+
+        function dfs(root:DirNode){
+            const curr = root
+
+            for(let item of curr.children){
+                if (item instanceof FileNode){
+                    let backward = Math.max(idx - 1, 0)
+                    let forward = Math.min(idx + 1, maxLength - 1) 
+
+                    item.prev = postList[backward] || " "
+                    item.next = postList[forward] || " "
+
+                    idx += 1
+                } 
+                else if(item instanceof DirNode){
+                    dfs(item)
+                }
+            }
+
+            dfs(root)
+
+
+        }
+
+    }
+
+
+    //TODO: Write the render function
+    //TODO: Create the Hooks
+    //TODO: Refactor: Get Rid of Main.ts
+    //TODO: Make use of the HandleBars interface
+    //TODO: Try to write tests 
+
 }
+
+
